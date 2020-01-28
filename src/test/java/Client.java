@@ -11,27 +11,15 @@ public class Client {
         Future<Void> future = client.connect(new InetSocketAddress("127.0.0.1", 8080));
         future.get();
 
-        ByteBuffer buffer = ByteBuffer.allocate(100);
-        client.read(buffer, null, new CompletionHandler<Integer, Void>() {
-            @Override
-            public void completed(Integer result, Void attachment) {
-                System.out.println("client received: " + new String(buffer.array()));
-                buffer.flip();
-                buffer.clear();
-                client.write(buffer, null, this);
-            }
-            @Override
-            public void failed(Throwable exc, Void attachment) {
-                exc.printStackTrace();
-                try {
-                    client.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        client.write(ByteBuffer.wrap("Hello".getBytes())).get();
+        client.write(ByteBuffer.wrap("Hello".getBytes())).get();
+        client.write(ByteBuffer.wrap("Hello".getBytes())).get();
+        client.write(ByteBuffer.wrap("Hello".getBytes())).get();
+        client.write(ByteBuffer.wrap("Hello".getBytes())).get();
+        client.write(ByteBuffer.wrap("Hello".getBytes())).get();
 
-            }
-        });
+        client.write(ByteBuffer.wrap("hi".getBytes())).get();
 
-        Thread.sleep(10000);
+        Thread.sleep(2000000);
     }
 }

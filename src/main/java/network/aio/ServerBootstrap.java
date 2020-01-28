@@ -3,43 +3,31 @@ package network.aio;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketOption;
-import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
 public class ServerBootstrap {
 
-    private int                             port;
-    private List<EncoderHandler>            encoders;
-    private List<DecoderHandler>            decoders;
-    private List<DataHandler>               handlers;
-    private Map<SocketOption, Object>       options;
-    private AsynchronousChannelGroup        group;
+    private Map<SocketOption, Object> options;
+    private AsynchronousChannelGroup group;
     private AsynchronousServerSocketChannel server;
+    private ReadHandler readHandler;
+    private int port;
+    private int bufferSize;
 
     public ServerBootstrap() {
-        encoders = new LinkedList<>();
-        decoders = new LinkedList<>();
-        handlers = new LinkedList<>();
-        options  = new LinkedHashMap<>();
+        options = new LinkedHashMap<>();
     }
 
     public void group() throws IOException {
         int threadSize = Runtime.getRuntime().availableProcessors() * 2 + 1;
-        ExecutorService group = new ThreadPoolExecutor(threadSize, threadSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setName("ServerBootstrap");
-                return thread;
-            }
+        ExecutorService group = new ThreadPoolExecutor(threadSize, threadSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> {
+            Thread thread = new Thread(r);
+            thread.setName("ServerBootstrap");
+            return thread;
         });
         group(AsynchronousChannelGroup.withThreadPool(group));
     }
@@ -64,18 +52,8 @@ public class ServerBootstrap {
         return this;
     }
 
-    public ServerBootstrap handler(DataHandler<?> handler) {
-        handlers.add(handler);
-        return this;
-    }
-
-    public ServerBootstrap handler(DecoderHandler<?> handler) {
-        decoders.add(handler);
-        return this;
-    }
-
-    public ServerBootstrap handler(EncoderHandler handler) {
-        encoders.add(handler);
+    public ServerBootstrap readHandler(ReadHandler readHandler) {
+        this.readHandler = readHandler;
         return this;
     }
 
@@ -84,35 +62,31 @@ public class ServerBootstrap {
         return this;
     }
 
-    public ServerBootstrap open() throws IOException, InterruptedException {
-        server = AsynchronousServerSocketChannel.open(group).bind(new InetSocketAddress("0.0.0.0", port));
+    public ServerBootstrap bufferSize(int bufferSize) {
+        this.bufferSize = bufferSize;
+        return this;
+    }
+
+    public AsynchronousServerSocketChannel open() throws IOException, InterruptedException {
+        server = AsynchronousServerSocketChannel.open(group).bind(new InetSocketAddress(port));
 
         // help gc
         options.forEach((k, v) -> {
             try {
                 server.setOption(k, v);
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ignored) {
             }
         });
         options.clear();
         options = null;
 
-        server.accept(null, new CompletionHandler<AsynchronousSocketChannel, ByteBuffer>() {
-            @Override
-            public void completed(AsynchronousSocketChannel result, ByteBuffer attachment) {
-                server.accept(null, this);
-
-            }
-
-            @Override
-            public void failed(Throwable exc, ByteBuffer attachment) {
-                exc.printStackTrace();
-            }
-        });
-
+        server.accept(null, new ServerAcceptHandler(server, readHandler, bufferSize));
         group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 
-        return this;
+        return server;
+    }
+
+    public void shutdown() {
+        group.shutdown();
     }
 }
