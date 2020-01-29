@@ -5,21 +5,21 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
-public class ServerAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel> {
+public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel> {
 
     private CallbackReadHandler handler;
     private int bufferSize;
 
-    public ServerAcceptHandler(CallbackReadHandler handler, int bufferSize) {
+    public AcceptHandler(CallbackReadHandler handler, int bufferSize) {
         this.handler = handler;
         this.bufferSize = bufferSize;
     }
 
     @Override
     public void completed(AsynchronousSocketChannel channel, AsynchronousServerSocketChannel server) {
-        server.accept(null, this);
+        server.accept(server, this);
         ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
-        channel.read(buffer, buffer, new ServerReadHandler(channel, handler));
+        channel.read(buffer, buffer, new ReadHandler(channel, handler));
     }
 
     @Override

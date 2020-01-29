@@ -4,12 +4,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
-public class ClientConnectHandler implements CompletionHandler<Void, AsynchronousSocketChannel> {
+public class ConnectHandler implements CompletionHandler<Void, AsynchronousSocketChannel> {
 
     private CallbackReadHandler handler;
     private int bufferSize;
 
-    public ClientConnectHandler(CallbackReadHandler handler, int bufferSize) {
+    public ConnectHandler(CallbackReadHandler handler, int bufferSize) {
         this.handler = handler;
         this.bufferSize = bufferSize;
     }
@@ -17,7 +17,7 @@ public class ClientConnectHandler implements CompletionHandler<Void, Asynchronou
     @Override
     public void completed(Void result, AsynchronousSocketChannel channel) {
         ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
-        channel.read(buffer, buffer, new ClientReadHandler(channel, handler));
+        channel.read(buffer, buffer, new ReadHandler(channel, handler));
     }
 
     @Override

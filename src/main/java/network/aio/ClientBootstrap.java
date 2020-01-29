@@ -90,7 +90,7 @@ public class ClientBootstrap {
         options.clear();
         options = null;
 
-        client.connect(new InetSocketAddress(host, port), client, new ClientConnectHandler(handler, bufferSize));
+        client.connect(new InetSocketAddress(host, port), client, new ConnectHandler(handler, bufferSize));
 
         group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 

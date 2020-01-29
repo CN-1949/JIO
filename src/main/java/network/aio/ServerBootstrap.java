@@ -82,7 +82,7 @@ public class ServerBootstrap {
         options = null;
 
         server.bind(new InetSocketAddress("0.0.0.0", port));
-        server.accept(server, new ServerAcceptHandler(handler, bufferSize));
+        server.accept(server, new AcceptHandler(handler, bufferSize));
 
         group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 

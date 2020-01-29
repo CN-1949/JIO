@@ -1,5 +1,6 @@
 import network.aio.CallbackReadHandler;
 import network.aio.ServerBootstrap;
+import network.aio.SocketChannel;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousServerSocketChannel;
@@ -14,13 +15,14 @@ public class Server2 {
         bootstrap.bufferSize(1024);
         bootstrap.readHandler(new CallbackReadHandler() {
             @Override
-            public void completed(AsynchronousSocketChannel channel, byte[] bytes) {
-                System.out.println(new String(bytes));
+            public void completed(SocketChannel channel, byte[] bytes) {
+                channel.async("Hi".getBytes());
+                System.out.println("---------->" + new String(bytes) + "<----------");
             }
 
             @Override
             public void failed(Throwable exc) {
-
+                exc.printStackTrace();
             }
         });
         AsynchronousServerSocketChannel server = bootstrap.open();
