@@ -1,5 +1,4 @@
-import network.aio.ReadHandler;
-import network.aio.ServerAcceptHandler;
+import network.aio.CallbackReadHandler;
 import network.aio.ServerBootstrap;
 
 import java.io.IOException;
@@ -13,7 +12,7 @@ public class Server2 {
         bootstrap.group();
         bootstrap.bind(8080);
         bootstrap.bufferSize(1024);
-        bootstrap.readHandler(new ReadHandler() {
+        bootstrap.readHandler(new CallbackReadHandler() {
             @Override
             public void completed(AsynchronousSocketChannel channel, byte[] bytes) {
                 System.out.println(new String(bytes));
@@ -25,6 +24,6 @@ public class Server2 {
             }
         });
         AsynchronousServerSocketChannel server = bootstrap.open();
-        Thread.sleep(100000000);
+//        Thread.sleep(100000000);
     }
 }

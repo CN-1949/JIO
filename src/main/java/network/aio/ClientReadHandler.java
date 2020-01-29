@@ -4,12 +4,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
-public class ServerReadHandler implements CompletionHandler<Integer, ByteBuffer> {
+public class ClientReadHandler implements CompletionHandler<Integer, ByteBuffer> {
 
     private AsynchronousSocketChannel channel;
     private CallbackReadHandler handler;
 
-    public ServerReadHandler(AsynchronousSocketChannel channel, CallbackReadHandler handler) {
+    public ClientReadHandler(AsynchronousSocketChannel channel, CallbackReadHandler handler) {
         this.channel = channel;
         this.handler = handler;
     }
@@ -27,11 +27,11 @@ public class ServerReadHandler implements CompletionHandler<Integer, ByteBuffer>
     }
 
     @Override
-    public void failed(Throwable exc, ByteBuffer attachment) {
-        if (handler == null) {
-            exc.printStackTrace();
-        } else {
+    public void failed(Throwable exc, ByteBuffer buf) {
+        if (handler != null) {
             handler.failed(exc);
-        }
+        } else {
+            exc.printStackTrace();
+        } 
     }
 }

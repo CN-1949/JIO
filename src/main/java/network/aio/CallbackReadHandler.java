@@ -2,7 +2,7 @@ package network.aio;
 
 import java.nio.channels.AsynchronousSocketChannel;
 
-public interface ReadHandler {
+public interface CallbackReadHandler {
 
     void completed(AsynchronousSocketChannel channel, byte[] bytes);
 

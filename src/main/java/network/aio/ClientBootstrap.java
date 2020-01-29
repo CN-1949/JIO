@@ -4,25 +4,29 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
-import java.nio.channels.AsynchronousServerSocketChannel;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-public class ServerBootstrap {
+public class ClientBootstrap {
 
     private Map<SocketOption, Object> options;
     private AsynchronousChannelGroup group;
-    private AsynchronousServerSocketChannel server;
+    private AsynchronousSocketChannel client;
     private CallbackReadHandler handler;
+    private String host;
     private int port;
     private int bufferSize;
 
-    public ServerBootstrap() {
+    public ClientBootstrap() {
         options = new LinkedHashMap<>();
     }
 
-    public ServerBootstrap group() throws IOException {
+    public ClientBootstrap group() throws IOException {
         int threadSize = Runtime.getRuntime().availableProcessors() * 2 + 1;
         ExecutorService group = new ThreadPoolExecutor(threadSize, threadSize, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> {
             Thread thread = new Thread(r);
@@ -32,16 +36,16 @@ public class ServerBootstrap {
         return group(AsynchronousChannelGroup.withThreadPool(group));
     }
 
-    public ServerBootstrap group(ExecutorService group) throws IOException {
+    public ClientBootstrap group(ExecutorService group) throws IOException {
         return group(AsynchronousChannelGroup.withThreadPool(group));
     }
 
-    public ServerBootstrap group(AsynchronousChannelGroup group) {
+    public ClientBootstrap group(AsynchronousChannelGroup group) {
         this.group = group;
         return this;
     }
 
-    public <T> ServerBootstrap option(SocketOption<T> name, T value) {
+    public <T> ClientBootstrap option(SocketOption<T> name, T value) {
         if (name != null) {
             if (value == null) {
                 options.remove(name);
@@ -52,28 +56,33 @@ public class ServerBootstrap {
         return this;
     }
 
-    public ServerBootstrap readHandler(CallbackReadHandler handler) {
+    public ClientBootstrap readHandler(CallbackReadHandler handler) {
         this.handler = handler;
         return this;
     }
 
-    public ServerBootstrap bind(int port) {
+    public ClientBootstrap host(String host) {
+        this.host = host;
+        return this;
+    }
+
+    public ClientBootstrap bind(int port) {
         this.port = port;
         return this;
     }
 
-    public ServerBootstrap bufferSize(int bufferSize) {
+    public ClientBootstrap bufferSize(int bufferSize) {
         this.bufferSize = bufferSize;
         return this;
     }
 
-    public AsynchronousServerSocketChannel open() throws IOException, InterruptedException {
+    public AsynchronousSocketChannel open() throws IOException, InterruptedException {
 
-        server = AsynchronousServerSocketChannel.open(group);
+        client = AsynchronousSocketChannel.open(group);
 
         options.forEach((k, v) -> {
             try {
-                server.setOption(k, v);
+                client.setOption(k, v);
             } catch (IOException ignored) {
             }
         });
@@ -81,12 +90,11 @@ public class ServerBootstrap {
         options.clear();
         options = null;
 
-        server.bind(new InetSocketAddress("0.0.0.0", port));
-        server.accept(server, new ServerAcceptHandler(handler, bufferSize));
+        client.connect(new InetSocketAddress(host, port), client, new ClientConnectHandler(handler, bufferSize));
 
         group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 
-        return server;
+        return client;
     }
 
     public void shutdown() {
